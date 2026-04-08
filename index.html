@@ -2,80 +2,139 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CYBER OPS: TERMINAL</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600;900&display=swap');
-        :root { --bg: #030509; --panel: #0a0f1a; --cyan: #00f3ff; --red: #ff003c; --green: #39ff14; }
-        body { background: var(--bg); color: #e0fbfc; font-family: 'Fira Code', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; }
-        #game-box { width: 550px; padding: 40px; background: var(--panel); border: 1px solid var(--cyan); border-radius: 5px; text-align: center; position: relative; box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); }
-        .hud { display: flex; justify-content: space-between; border-bottom: 1px solid var(--cyan); padding-bottom: 10px; margin-bottom: 25px; font-family: 'Orbitron'; font-size: 0.7rem; color: var(--cyan); }
-        #q-area { min-height: 140px; display: flex; align-items: center; justify-content: center; background: rgba(0,243,255,0.03); border-left: 4px solid var(--cyan); margin: 20px 0; padding: 25px; }
-        .btn { width: 100%; padding: 18px; margin: 10px 0; background: transparent; border: 1px solid var(--green); color: var(--green); font-family: 'Orbitron'; cursor: pointer; font-weight: 900; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%); }
+        
+        :root { 
+            --bg: #030509; --panel: #0a0f1a; --cyan: #00f3ff; 
+            --red: #ff003c; --green: #39ff14; --glow: rgba(0, 243, 255, 0.2);
+        }
+
+        body { 
+            background: var(--bg); color: #e0fbfc; font-family: 'Fira Code', monospace; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; margin: 0; overflow: hidden;
+        }
+
+        /* Scanline Overlay */
+        body::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 100; background-size: 100% 4px, 3px 100%; pointer-events: none;
+        }
+
+        #game-box { 
+            width: 550px; padding: 40px; background: var(--panel); border: 1px solid var(--cyan); 
+            border-radius: 5px; text-align: center; position: relative; box-shadow: 0 0 20px var(--glow);
+        }
+
+        .hud { 
+            display: flex; justify-content: space-between; border-bottom: 1px solid var(--cyan); 
+            padding-bottom: 10px; margin-bottom: 25px; font-family: 'Orbitron'; font-size: 0.7rem; color: var(--cyan); 
+        }
+
+        #q-area { 
+            min-height: 140px; display: flex; align-items: center; justify-content: center; 
+            background: rgba(0, 243, 255, 0.03); border-left: 4px solid var(--cyan); margin: 20px 0; padding: 25px; 
+        }
+
+        .btn { 
+            width: 100%; padding: 18px; margin: 10px 0; background: transparent; 
+            border: 1px solid var(--green); color: var(--green); font-family: 'Orbitron'; 
+            cursor: pointer; font-weight: 900; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%);
+            transition: 0.2s;
+        }
+        .btn:hover { background: rgba(57, 255, 20, 0.1); box-shadow: 0 0 15px var(--green); }
         .btn-threat { border-color: var(--red); color: var(--red); }
-        input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--cyan); color: var(--cyan); text-align: center; margin-bottom: 25px; }
-        #feedback, #broadcast-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
-        #broadcast-overlay { background: var(--red); }
+        .btn-threat:hover { background: rgba(255, 0, 60, 0.1); box-shadow: 0 0 15px var(--red); }
+
+        input { 
+            width: 100%; padding: 15px; background: #000; border: 1px solid var(--cyan); 
+            color: var(--cyan); text-align: center; margin-bottom: 25px; box-sizing: border-box; 
+        }
+
+        /* Overlays */
+        #feedback, #broadcast-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: var(--bg); display: none; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 1000; border-radius: 5px;
+        }
+        #broadcast-overlay { background: var(--red); position: fixed; border-radius: 0; }
+
         .hidden { display: none !important; }
-        .row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #1f3a5f; }
+        .row { 
+            display: flex; justify-content: space-between; padding: 12px; 
+            border-bottom: 1px solid rgba(0, 243, 255, 0.1); font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
 <div id="broadcast-overlay">
     <h1 style="font-family:'Orbitron'; font-size:4rem; color:white; margin:0;">EYES FRONT</h1>
-    <p style="color:white; font-size:1.5rem; letter-spacing:2px;">LOOK AT THE MEETING SCREEN</p>
+    <p style="color:white; font-size:1.2rem; letter-spacing:4px;">INSTRUCTOR IS BROADCASTING</p>
 </div>
 
 <div id="game-box">
     <div id="feedback">
         <h1 id="fb-status" style="font-family:'Orbitron'; font-size: 3rem;"></h1>
-        <p id="fb-note" style="padding: 30px; font-size: 1.1rem;"></p>
-        <button class="btn" onclick="nextQ()" style="width: 200px">PROCEED</button>
+        <p id="fb-note" style="padding: 30px; line-height: 1.6;"></p>
+        <button class="btn" onclick="nextQ()" style="width: 200px">NEXT TASK</button>
     </div>
 
     <div id="login-screen">
-        <h1 style="font-family:'Orbitron'; color: var(--cyan); font-size: 2.5rem;">CYBER OPS</h1>
-        <input type="text" id="username" placeholder="AGENT NAME">
-        <button class="btn" onclick="start()">INITIALIZE</button>
+        <h1 style="font-family:'Orbitron'; color: var(--cyan); font-size: 2.5rem; margin-bottom: 5px;">CYBER OPS</h1>
+        <p style="font-size: 0.6rem; letter-spacing: 5px; margin-bottom: 30px; opacity: 0.5;">SECURE ACCESS GATEWAY</p>
+        <input type="text" id="username" placeholder="AGENT_NAME_HERE" maxlength="15">
+        <button class="btn" onclick="start()">INITIALIZE UPLINK</button>
     </div>
 
     <div id="play-screen" class="hidden">
-        <div class="hud"><span>ID: <span id="hud-user"></span></span><span>STABILITY: <span id="hud-score">0</span>/2000</span></div>
+        <div class="hud">
+            <span>AGENT: <span id="hud-user"></span></span>
+            <span>UPLINK: <span id="hud-score">0</span>/2000</span>
+        </div>
         <div id="q-area"><p id="q-text"></p></div>
-        <button class="btn" onclick="check(true)">SECURE</button>
-        <button class="btn btn-threat" onclick="check(false)">THREAT</button>
+        <button class="btn" onclick="check(true)">✅ LEGITIMATE</button>
+        <button class="btn btn-threat" onclick="check(false)">☢️ THREAT</button>
     </div>
 
     <div id="end-screen" class="hidden">
-        <div style="border: 1px dashed var(--cyan); padding: 15px; margin-bottom: 20px; color: var(--cyan);">MISSION COMPLETE. WAIT FOR INSTRUCTOR.</div>
-        <div id="leaderboard"></div>
-        <button class="btn" onclick="location.reload()">REBOOT</button>
+        <h2 style="font-family:'Orbitron'; color: var(--cyan);">MISSION COMPLETE</h2>
+        <div style="border: 1px dashed var(--cyan); padding: 15px; margin: 15px 0; color: var(--cyan); font-size: 0.8rem;">
+            SYSTEMS STABILIZED. WAIT FOR INSTRUCTOR.
+        </div>
+        <div id="leaderboard" style="background: rgba(0,0,0,0.3); max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
+        <button class="btn" onclick="location.reload()" style="width: 180px">RESTART</button>
     </div>
 </div>
 
 <script>
     let user = "", score = 0, idx = 0;
     const scenarios = [
-        { t: "SMS: 'Your Roblox account will be deleted in 2 hours. Click to verify: roblox-fix.cc'", isL: false, n: "Phishing! Urgent threats are used to force quick, bad decisions." },
-        { t: "Email: 'Monthly school lunch menu for May is attached (menu.pdf)'.", isL: true, n: "Legit. Standard school PDF attachments are usually safe." },
-        { t: "Discord DM: 'I accidentally reported you! Contact this admin to stop the ban.'", isL: false, n: "Scam! Admins will never ask you to talk to them via a regular user DM." },
-        { t: "MFA: Your phone asks to 'Approve Login' but you aren't trying to sign in.", isL: false, n: "MFA Fatigue Attack. Someone has your password—Deny it!" },
+        { t: "SMS: 'Your Roblox account will be deleted in 2 hours. Click to verify: roblox-fix.cc'", isL: false, n: "Phishing! Scammers use false urgency to make you panic and click." },
+        { t: "Email: 'Monthly school lunch menu for May is attached (menu.pdf)'.", isL: true, n: "Legit. Official school documents from known addresses are safe." },
+        { t: "Discord DM: 'I accidentally reported you! Contact this admin to stop the ban.'", isL: false, n: "Classic Scam. Admins will never ask a regular user to contact you." },
+        { t: "MFA: Your phone asks to 'Approve Login' but you aren't trying to sign in.", isL: false, n: "MFA Fatigue. Someone knows your password! Block the request." },
         { t: "Popup: 'Your iPhone has 27 viruses! Install Cleaner Pro now.'", isL: false, n: "Scareware. Websites cannot scan your phone for viruses." },
-        { t: "Email from 'No-Reply@Google.com' saying a new device logged in.", isL: true, n: "Security Alert. These are real, but always check the sender's actual email." },
-        { t: "A 'Friend' on WhatsApp sends a 'Free Spotify Premium' APK file.", isL: false, n: "Trojan! APK files from friends are often used to spread malware." },
-        { t: "Public USB charging station at the airport has a 'Free High Speed' sign.", isL: false, n: "Juice Jacking. Data can be stolen through charging cables." },
-        { t: "Steam: 'Valve has updated their Subscriber Agreement. Please read.'", isL: true, n: "Routine legal updates from known gaming platforms are safe." },
-        { t: "Windows: 'A critical security update is ready. Restart to stay protected.'", isL: true, n: "Safe. Keeping your system updated is your best defense." },
-        { t: "Website asks for your Social Security number to 'Verify age over 13'.", isL: false, n: "Identity Theft. Sites should never ask for high-level personal IDs." },
-        { t: "YouTube: A comment says 'I made $5000 today using this crypto link!'", isL: false, n: "Spambot. These links lead to financial scams or drainers." },
-        { t: "Instagram: 'You've been selected for a Brand Deal! Click our bio.'", isL: false, n: "Account Hijacking. Fake deals are used to steal influencer accounts." },
-        { t: "Person in a game lobby asks for your password to 'gift you a skin'.", isL: false, n: "Social Engineering. Never share passwords for any reason." },
-        { t: "A 'Free VPN' app asks to access your Contacts and SMS history.", isL: false, n: "Spyware. A VPN has no reason to read your private text messages." },
-        { t: "School Wi-Fi: A login page asks for your Student ID and Password.", isL: true, n: "Captive Portal. This is how school networks verify users." },
-        { t: "Twitch: Link in chat says 'See the leak of the next GTA game here!'", isL: false, n: "Malware Hook. Leaks are used to get people to download viruses." },
-        { t: "QR code on a parking meter says 'Scan here to pay for your spot.'", isL: false, n: "Quishing. Scammers put fake QR stickers over real ones." },
-        { t: "GitHub: 'Security Alert - A dependency has a known vulnerability.'", isL: true, n: "Dependabot. Automated security tools help developers stay safe." },
-        { t: "You find a USB drive labeled 'Math Exam' and plug it in.", isL: false, n: "Baiting. Mystery drives are often loaded with ransomware." }
+        { t: "Amazon: 'Your package is being delivered today. Track here: amazon.com/orders'", isL: true, n: "Legit. Links from the official domain (amazon.com) are safe." },
+        { t: "A 'Friend' on WhatsApp sends an APK file: 'Get free Spotify Premium.'", isL: false, n: "Trojan! Never install APK files sent via chat apps." },
+        { t: "Public USB charging station at the airport has a 'Free High Speed' sign.", isL: false, n: "Juice Jacking. Data can be stolen while you charge your phone." },
+        { t: "Windows: 'A critical security update is ready. Restart to stay protected.'", isL: true, n: "Safe. Keeping your system updated is your #1 defense." },
+        { t: "You find a USB drive labeled 'Final Exam' and plug it in.", isL: false, n: "Baiting. Mystery USBs often carry ransomware." },
+        { t: "Website asks for your Social Security number to 'Verify age over 13'.", isL: false, n: "Identity Theft. Sites should never ask for such sensitive IDs." },
+        { t: "YouTube: A comment says 'I made $5000 today using this link!'", isL: false, n: "Bot Spam. These links drain crypto or steal login tokens." },
+        { t: "Email from 'No-Reply@Google.com' saying a new device logged in.", isL: true, n: "Security Alert. These are real, but check the sender email carefully." },
+        { t: "Person in a game asks for your password to 'gift you a skin'.", isL: false, n: "Social Engineering. No skin requires sharing your password." },
+        { t: "A 'Free VPN' app asks for access to your Contacts and SMS history.", isL: false, n: "Spyware. A VPN does not need to read your texts to work." },
+        { t: "School Wi-Fi: A login page asks for your Student ID and Password.", isL: true, n: "Captive Portal. Standard for verifying users on school grounds." },
+        { t: "Twitch: Link in chat says 'See the leak of the next GTA game here!'", isL: false, n: "Malware Hook. Scammers use hype to get you to download viruses." },
+        { t: "QR code on a parking meter says 'Scan here to pay for your spot.'", isL: false, n: "Quishing. Scammers glue fake QR codes over real ones." },
+        { t: "GitHub: 'Security Alert - A dependency has a known vulnerability.'", isL: true, n: "Safe. These alerts help you keep your code secure." },
+        { t: "Instagram: 'You've been selected for a Brand Deal! Click our bio.'", isL: false, n: "Phishing. Fake brand deals are a way to hijack popular accounts." }
     ];
 
     function start() {
@@ -110,19 +169,42 @@
         document.getElementById('hud-score').innerText = score;
     }
 
-    function nextQ() { idx++; render(); }
+    function nextQ() { 
+        idx++; 
+        if (idx >= scenarios.length) {
+            document.getElementById('feedback').style.display = 'none'; // CRUCIAL: HIDE OVERLAY
+            end(); 
+        } else {
+            render(); 
+        }
+    }
 
     async function end() {
         document.getElementById('play-screen').classList.add('hidden');
         document.getElementById('end-screen').classList.remove('hidden');
-        await fetch('/api', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: user, score: score }) });
-        refreshLeaderboard();
+        document.getElementById('leaderboard').innerHTML = "<p>SYNCING WITH DATABASE...</p>";
+        
+        try {
+            await fetch('/api', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ username: user, score: score }) 
+            });
+            refreshLeaderboard();
+        } catch(e) {
+            document.getElementById('leaderboard').innerHTML = "<p style='color:var(--red)'>UPLINK FAILED.</p>";
+        }
     }
 
     async function refreshLeaderboard() {
         const res = await fetch('/api');
         const data = await res.json();
-        document.getElementById('leaderboard').innerHTML = data.leaderboard.map((r, i) => `<div class="row"><span>#${i+1} ${r.username}</span><span>${r.score}</span></div>`).join('');
+        document.getElementById('leaderboard').innerHTML = data.leaderboard.map((r, i) => `
+            <div class="row">
+                <span>#${i+1} ${r.username.toUpperCase()}</span>
+                <span style="color:var(--cyan)">${r.score}</span>
+            </div>
+        `).join('');
     }
 
     function startBroadcastListener() {
