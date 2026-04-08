@@ -12,9 +12,10 @@
         .hud { display: flex; justify-content: space-between; border-bottom: 1px solid var(--cyan); padding-bottom: 10px; margin-bottom: 25px; font-family: 'Orbitron'; font-size: 0.7rem; color: var(--cyan); }
         #q-area { min-height: 140px; display: flex; align-items: center; justify-content: center; background: rgba(0,243,255,0.03); border-left: 4px solid var(--cyan); margin: 20px 0; padding: 25px; }
         .btn { width: 100%; padding: 18px; margin: 10px 0; background: transparent; border: 1px solid var(--green); color: var(--green); font-family: 'Orbitron'; cursor: pointer; font-weight: 900; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%); transition: 0.2s; }
-        .btn:hover { background: rgba(57, 255, 20, 0.1); box-shadow: 0 0 15px var(--green); }
+        .btn:hover:not(:disabled) { background: rgba(57, 255, 20, 0.1); box-shadow: 0 0 15px var(--green); }
+        .btn:disabled { border-color: gray; color: gray; cursor: not-allowed; opacity: 0.5; }
         .btn-threat { border-color: var(--red); color: var(--red); }
-        .btn-threat:hover { background: rgba(255, 0, 60, 0.1); box-shadow: 0 0 15px var(--red); }
+        .btn-threat:hover:not(:disabled) { background: rgba(255, 0, 60, 0.1); box-shadow: 0 0 15px var(--red); }
         input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--cyan); color: var(--cyan); text-align: center; margin-bottom: 15px; box-sizing: border-box; }
         #feedback, #broadcast-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
         #broadcast-overlay { background: var(--red); }
@@ -27,6 +28,9 @@
         
         .timer-warning { color: var(--red) !important; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
+        
+        .admin-link { display: inline-block; margin-top: 20px; font-family: 'Orbitron'; color: var(--cyan); text-decoration: none; font-size: 0.6rem; opacity: 0.4; transition: 0.3s; }
+        .admin-link:hover { opacity: 1; text-shadow: 0 0 5px var(--cyan); }
     </style>
 </head>
 <body>
@@ -55,12 +59,13 @@
     <div id="instructions-screen" class="hidden">
         <h2 style="font-family:'Orbitron'; color: var(--cyan); font-size: 1.2rem;">MISSION BRIEFING</h2>
         <div class="briefing-text">
-            <p><b>1. OBJECTIVE:</b> Analyze 20 data packets and identify security threats to stabilize the network.</p>
-            <p><b>2. TIME LIMIT:</b> You have exactly <b>5 minutes (300s)</b>. Failure to finish will result in an automatic score submission.</p>
-            <p><b>3. PROTOCOLS:</b> Use <b>SECURE</b> for verified school data. Use <b>THREAT</b> for phishing, mystery USBs, or fake alerts.</p>
-            <p><b>4. INTERRUPTION:</b> If the screen turns <b>RED</b>, the 'Eyes Front' protocol is active. Stop immediately.</p>
+            <p><b>1. OBJECTIVE:</b> Analyze 20 data packets to stabilize the network.</p>
+            <p><b>2. TIME LIMIT:</b> 5 minutes (300s). Countdown pauses during broadcasts.</p>
+            <p><b>3. PROTOCOLS:</b> <b>SECURE</b> for verified data. <b>THREAT</b> for phishing/malware.</p>
+            <p><b>4. CREDITS:</b> Developed by <b>Muhammad Ahmad</b> | Grade 7 Cyber Project.</p>
         </div>
-        <button class="btn" onclick="beginMission()">ACCEPT MISSION</button>
+        <button id="start-btn" class="btn" onclick="beginMission()" disabled>AWAITING INSTRUCTOR SIGNAL</button>
+        <a href="/admin.html" class="admin-link">[ INSTRUCTOR_PANEL_ACCESS ]</a>
     </div>
 
     <div id="play-screen" class="hidden">
@@ -86,6 +91,7 @@
     let user = "", score = 0, idx = 0;
     let timerInterval;
     let timeLeft = 300; 
+    let isPaused = false;
     const SECRET_KEY = "G7-CYBER-2026"; 
 
     const scenarios = [
@@ -113,6 +119,7 @@
 
     function startTimer() {
         timerInterval = setInterval(() => {
+            if (isPaused) return; 
             timeLeft--;
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
@@ -129,7 +136,6 @@
         }, 1000);
     }
 
-    // Step 1: Check Password
     function authenticate() {
         user = document.getElementById('username').value.trim();
         const pass = document.getElementById('passcode').value;
@@ -139,20 +145,19 @@
             err.style.display = "none";
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('instructions-screen').classList.remove('hidden');
+            startBroadcastListener(); 
         } else {
             err.style.display = "block";
             document.getElementById('passcode').value = ""; 
         }
     }
 
-    // Step 2: Start Game after Instructions
     function beginMission() {
         document.getElementById('instructions-screen').classList.add('hidden');
         document.getElementById('play-screen').classList.remove('hidden');
         document.getElementById('hud-user').innerText = user.toUpperCase();
         render();
         startTimer();
-        startBroadcastListener();
     }
 
     function render() {
@@ -162,6 +167,7 @@
     }
 
     function check(choice) {
+        if(isPaused) return;
         const q = scenarios[idx];
         const fb = document.getElementById('feedback');
         fb.style.display = 'flex';
@@ -214,9 +220,29 @@
 
     function startBroadcastListener() {
         setInterval(async () => {
-            const res = await fetch('/api');
-            const data = await res.json();
-            document.getElementById('broadcast-overlay').style.display = data.broadcast ? 'flex' : 'none';
+            try {
+                const res = await fetch('/api');
+                const data = await res.json();
+                
+                if (data.broadcast) {
+                    isPaused = true;
+                    document.getElementById('broadcast-overlay').style.display = 'flex';
+                } else {
+                    isPaused = false;
+                    document.getElementById('broadcast-overlay').style.display = 'none';
+                }
+
+                const startBtn = document.getElementById('start-btn');
+                if (data.game_started) {
+                    startBtn.disabled = false;
+                    startBtn.innerText = "ACCEPT MISSION";
+                } else {
+                    startBtn.disabled = true;
+                    startBtn.innerText = "AWAITING INSTRUCTOR SIGNAL";
+                }
+            } catch (err) {
+                console.error("API Sync Failed", err);
+            }
         }, 3000);
     }
 </script>
