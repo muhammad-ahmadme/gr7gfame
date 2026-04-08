@@ -4,43 +4,47 @@
     <meta charset="UTF-8">
     <title>INSTRUCTOR PANEL</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600;900&display=swap');
-        :root { --bg: #05080f; --panel: #0d121d; --cyan: #00f3ff; --red: #ff003c; }
-        body { background: var(--bg); color: #e0fbfc; font-family: 'Fira Code', monospace; padding: 40px; }
-        .card { background: var(--panel); padding: 20px; border: 1px solid #1f3a5f; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-        .btn-broadcast { padding: 15px 30px; background: var(--red); color: white; border: none; font-family: 'Orbitron'; cursor: pointer; font-weight: bold; width: 100%; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; border-bottom: 1px solid #1f3a5f; text-align: left; }
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@900&display=swap');
+        body { background: #05080f; color: white; font-family: 'Fira Code'; padding: 20px; }
+        .card { background: #0d121d; border: 1px solid #00f3ff; padding: 20px; margin: 10px; text-align: center; }
+        .btn { padding: 15px; width: 100%; cursor: pointer; font-family: 'Orbitron'; margin: 5px; }
+        .btn-green { background: #39ff14; }
+        .btn-red { background: #ff003c; color: white; }
     </style>
 </head>
 <body>
-    <div style="max-width: 800px; margin: 0 auto;">
-        <h1 style="font-family:'Orbitron';">COMMAND CENTER</h1>
+    <h1 style="font-family:'Orbitron'; color:#00f3ff; text-align:center;">COMMAND CENTER</h1>
+    <div style="display:grid; grid-template-columns: 1fr 1fr;">
         <div class="card">
-            <h3 id="bc-status">BROADCAST: INACTIVE</h3>
-            <button class="btn-broadcast" onclick="toggleBroadcast(true)">ACTIVATE 'EYES FRONT'</button>
+            <h3>GAME LOCK</h3>
+            <button class="btn btn-green" onclick="control('toggle_game', true)">START GAME</button>
+            <button class="btn" onclick="control('toggle_game', false)">LOCK GAME</button>
         </div>
-        <div id="stats" style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;"></div>
-        <table>
-            <thead><tr><th>STUDENT</th><th>SCORE</th></tr></thead>
-            <tbody id="list"></tbody>
-        </table>
+        <div class="card">
+            <h3>BROADCAST</h3>
+            <button class="btn btn-red" onclick="control('toggle_broadcast', true)">EYES FRONT</button>
+            <button class="btn" onclick="control('toggle_broadcast', false)">STOP</button>
+        </div>
+    </div>
+    <div class="card">
+        <h3>LIVE LEADERBOARD</h3>
+        <div id="list"></div>
     </div>
 
     <script>
-        async function toggleBroadcast(status) {
-            await fetch('/api', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'toggle_broadcast', status: status }) });
-            location.reload(); 
+        async function control(action, status) {
+            await fetch('/api', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ action, status }) 
+            });
         }
-
         async function update() {
             const res = await fetch('/api');
             const data = await res.json();
-            document.getElementById('list').innerHTML = data.leaderboard.map(r => `<tr><td>${r.username}</td><td>${r.score}</td></tr>`).join('');
-            document.getElementById('stats').innerHTML = `<div class="card"><h2>${data.leaderboard.length}</h2><p>FINISHED</p></div><div class="card"><h2>${data.broadcast ? "ON" : "OFF"}</h2><p>BROADCAST</p></div>`;
+            document.getElementById('list').innerHTML = data.leaderboard.map(r => `<div>${r.username}: ${r.score}</div>`).join('');
         }
-        setInterval(update, 5000);
-        update();
+        setInterval(update, 3000);
     </script>
 </body>
 </html>
