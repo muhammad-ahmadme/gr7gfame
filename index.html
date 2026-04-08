@@ -21,7 +21,10 @@
         .hidden { display: none !important; }
         .row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(0, 243, 255, 0.1); }
         
-        /* New timer warning animation */
+        /* Briefing Styling */
+        .briefing-text { text-align: left; font-size: 0.75rem; line-height: 1.5; color: #bde0fe; margin-bottom: 20px; border: 1px solid rgba(0, 243, 255, 0.2); padding: 15px; background: rgba(0,0,0,0.2); }
+        .briefing-text b { color: var(--cyan); }
+        
         .timer-warning { color: var(--red) !important; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
     </style>
@@ -45,8 +48,19 @@
         <p style="font-size: 0.6rem; letter-spacing: 5px; margin-bottom: 30px; opacity: 0.5;">SECURE ACCESS GATEWAY</p>
         <input type="text" id="username" placeholder="AGENT_NAME" maxlength="15" autocomplete="off">
         <input type="password" id="passcode" placeholder="ACCESS_KEY" autocomplete="new-password">
-        <button class="btn" onclick="start()">INITIALIZE</button>
+        <button class="btn" onclick="authenticate()">INITIALIZE</button>
         <p id="login-err" style="color:var(--red); font-size:0.7rem; margin-top:10px; display:none;">ACCESS DENIED: INVALID KEY</p>
+    </div>
+
+    <div id="instructions-screen" class="hidden">
+        <h2 style="font-family:'Orbitron'; color: var(--cyan); font-size: 1.2rem;">MISSION BRIEFING</h2>
+        <div class="briefing-text">
+            <p><b>1. OBJECTIVE:</b> Analyze 20 data packets and identify security threats to stabilize the network.</p>
+            <p><b>2. TIME LIMIT:</b> You have exactly <b>5 minutes (300s)</b>. Failure to finish will result in an automatic score submission.</p>
+            <p><b>3. PROTOCOLS:</b> Use <b>SECURE</b> for verified school data. Use <b>THREAT</b> for phishing, mystery USBs, or fake alerts.</p>
+            <p><b>4. INTERRUPTION:</b> If the screen turns <b>RED</b>, the 'Eyes Front' protocol is active. Stop immediately.</p>
+        </div>
+        <button class="btn" onclick="beginMission()">ACCEPT MISSION</button>
     </div>
 
     <div id="play-screen" class="hidden">
@@ -71,7 +85,7 @@
 <script>
     let user = "", score = 0, idx = 0;
     let timerInterval;
-    let timeLeft = 300; // 300 seconds = 5 minutes
+    let timeLeft = 300; 
     const SECRET_KEY = "G7-CYBER-2026"; 
 
     const scenarios = [
@@ -103,13 +117,8 @@
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             const timeDisplay = document.getElementById('hud-time');
-            
             timeDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            if (timeLeft <= 30) {
-                timeDisplay.classList.add('timer-warning');
-            }
-
+            if (timeLeft <= 30) timeDisplay.classList.add('timer-warning');
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 document.getElementById('feedback').style.display = 'none';
@@ -120,24 +129,30 @@
         }, 1000);
     }
 
-    function start() {
+    // Step 1: Check Password
+    function authenticate() {
         user = document.getElementById('username').value.trim();
         const pass = document.getElementById('passcode').value;
         const err = document.getElementById('login-err');
-
         if(!user) return;
         if(pass === SECRET_KEY) {
             err.style.display = "none";
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('play-screen').classList.remove('hidden');
-            document.getElementById('hud-user').innerText = user.toUpperCase();
-            render();
-            startTimer(); // Initialize timer loop
-            startBroadcastListener();
+            document.getElementById('instructions-screen').classList.remove('hidden');
         } else {
             err.style.display = "block";
             document.getElementById('passcode').value = ""; 
         }
+    }
+
+    // Step 2: Start Game after Instructions
+    function beginMission() {
+        document.getElementById('instructions-screen').classList.add('hidden');
+        document.getElementById('play-screen').classList.remove('hidden');
+        document.getElementById('hud-user').innerText = user.toUpperCase();
+        render();
+        startTimer();
+        startBroadcastListener();
     }
 
     function render() {
@@ -173,7 +188,7 @@
     }
 
     async function end() {
-        clearInterval(timerInterval); // Halt timer if mission completes early
+        clearInterval(timerInterval);
         document.getElementById('play-screen').classList.add('hidden');
         document.getElementById('end-screen').classList.remove('hidden');
         document.getElementById('leaderboard').innerHTML = "<p>SYNCING SCORES...</p>";
