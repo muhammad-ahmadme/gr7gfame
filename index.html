@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cyber Ops: Cloud Uplink</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@500&display=swap');
+        body { background: #050b14; color: #e0fbfc; font-family: 'Fira Code', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #game-box { width: 400px; padding: 30px; border: 2px solid #00f3ff; border-radius: 15px; background: #0f1c2e; text-align: center; }
+        .btn { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #39ff14; background: transparent; color: #39ff14; font-family: 'Orbitron'; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #39ff14; color: #000; }
+        input { width: 100%; padding: 10px; margin-bottom: 20px; background: #000; border: 1px solid #00f3ff; color: #00f3ff; box-sizing: border-box; }
+        .hidden { display: none; }
+        .rank { display: flex; justify-content: space-between; border-bottom: 1px solid #1f3a5f; padding: 5px 0; }
+    </style>
+</head>
+<body>
+
+<div id="game-box">
+    <div id="login">
+        <h2 style="font-family:'Orbitron'">CYBER OPS</h2>
+        <input type="text" id="username" placeholder="AGENT NAME">
+        <button class="btn" onclick="start()">START MISSION</button>
+    </div>
+
+    <div id="play" class="hidden">
+        <p id="q"></p>
+        <button class="btn" onclick="ans(true)">LEGITIMATE</button>
+        <button class="btn" style="border-color:#ff003c; color:#ff003c" onclick="ans(false)">THREAT</button>
+    </div>
+
+    <div id="finish" class="hidden">
+        <h3 id="msg">UPLINKING...</h3>
+        <div id="board"></div>
+        <button class="btn" onclick="location.reload()">REBOOT</button>
+    </div>
+</div>
+
+<script>
+    let user = "", score = 0, idx = 0;
+    const questions = [
+        { t: "SMS: 'Your prize is waiting! Click bit.ly/win-99'", isLegit: false },
+        { t: "Official Windows Security Update Notification.", isLegit: true }
+    ];
+
+    function start() {
+        user = document.getElementById('username').value;
+        if(!user) return;
+        document.getElementById('login').className = 'hidden';
+        document.getElementById('play').className = '';
+        nextQ();
+    }
+
+    function nextQ() {
+        if(idx >= questions.length) return end();
+        document.getElementById('q').innerText = questions[idx].t;
+    }
+
+    function ans(val) {
+        if(val === questions[idx].isLegit) score += 100;
+        idx++; nextQ();
+    }
+
+    async function end() {
+        document.getElementById('play').className = 'hidden';
+        document.getElementById('finish').className = '';
+
+        // SAVE TO NODE.JS SERVER
+        await fetch('http://localhost:3000/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: user, score: score })
+        });
+
+        // GET LEADERBOARD
+        const res = await fetch('http://localhost:3000/leaderboard');
+        const data = await res.json();
+        
+        document.getElementById('msg').innerText = "TOP AGENTS";
+        document.getElementById('board').innerHTML = data.map(r => 
+            `<div class="rank"><span>${r.username}</span><span>${r.score}</span></div>`
+        ).join('');
+    }
+</script>
+</body>
+</html>
