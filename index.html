@@ -18,7 +18,6 @@
             min-height: 100vh; margin: 0; overflow: hidden;
         }
 
-        /* Scanline Overlay */
         body::before {
             content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
@@ -56,7 +55,6 @@
             color: var(--cyan); text-align: center; margin-bottom: 25px; box-sizing: border-box; 
         }
 
-        /* Overlays */
         #feedback, #broadcast-overlay { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: var(--bg); display: none; flex-direction: column; 
@@ -65,10 +63,7 @@
         #broadcast-overlay { background: var(--red); position: fixed; border-radius: 0; }
 
         .hidden { display: none !important; }
-        .row { 
-            display: flex; justify-content: space-between; padding: 12px; 
-            border-bottom: 1px solid rgba(0, 243, 255, 0.1); font-size: 0.9rem;
-        }
+        .row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid rgba(0, 243, 255, 0.1); font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -89,7 +84,9 @@
         <h1 style="font-family:'Orbitron'; color: var(--cyan); font-size: 2.5rem; margin-bottom: 5px;">CYBER OPS</h1>
         <p style="font-size: 0.6rem; letter-spacing: 5px; margin-bottom: 30px; opacity: 0.5;">SECURE ACCESS GATEWAY</p>
         <input type="text" id="username" placeholder="AGENT_NAME_HERE" maxlength="15">
+        <input type="password" id="passcode" placeholder="ACCESS_KEY_REQUIRED">
         <button class="btn" onclick="start()">INITIALIZE UPLINK</button>
+        <p id="login-err" style="color:var(--red); font-size:0.7rem; margin-top:10px; display:none;">INVALID ACCESS KEY</p>
     </div>
 
     <div id="play-screen" class="hidden">
@@ -114,6 +111,8 @@
 
 <script>
     let user = "", score = 0, idx = 0;
+    const SECRET_KEY = "G7-CYBER-2026"; // Set your password here
+
     const scenarios = [
         { t: "SMS: 'Your Roblox account will be deleted in 2 hours. Click to verify: roblox-fix.cc'", isL: false, n: "Phishing! Scammers use false urgency to make you panic and click." },
         { t: "Email: 'Monthly school lunch menu for May is attached (menu.pdf)'.", isL: true, n: "Legit. Official school documents from known addresses are safe." },
@@ -139,7 +138,16 @@
 
     function start() {
         user = document.getElementById('username').value.trim();
+        const pass = document.getElementById('passcode').value;
+        const err = document.getElementById('login-err');
+
         if(!user) return;
+        if(pass !== SECRET_KEY) {
+            err.style.display = "block";
+            return;
+        }
+
+        err.style.display = "none";
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('play-screen').classList.remove('hidden');
         document.getElementById('hud-user').innerText = user.toUpperCase();
@@ -172,7 +180,7 @@
     function nextQ() { 
         idx++; 
         if (idx >= scenarios.length) {
-            document.getElementById('feedback').style.display = 'none'; // CRUCIAL: HIDE OVERLAY
+            document.getElementById('feedback').style.display = 'none'; 
             end(); 
         } else {
             render(); 
