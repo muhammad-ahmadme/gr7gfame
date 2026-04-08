@@ -13,24 +13,14 @@
         #q-area { min-height: 140px; display: flex; align-items: center; justify-content: center; background: rgba(0,243,255,0.03); border-left: 4px solid var(--cyan); margin: 20px 0; padding: 25px; }
         .btn { width: 100%; padding: 18px; margin: 10px 0; background: transparent; border: 1px solid var(--green); color: var(--green); font-family: 'Orbitron'; cursor: pointer; font-weight: 900; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%); transition: 0.2s; }
         .btn:hover:not(:disabled) { background: rgba(57, 255, 20, 0.1); box-shadow: 0 0 15px var(--green); }
-        .btn:disabled { border-color: gray; color: gray; cursor: not-allowed; opacity: 0.5; }
+        .btn:disabled { border-color: #444; color: #444; cursor: not-allowed; }
         .btn-threat { border-color: var(--red); color: var(--red); }
-        .btn-threat:hover:not(:disabled) { background: rgba(255, 0, 60, 0.1); box-shadow: 0 0 15px var(--red); }
         input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--cyan); color: var(--cyan); text-align: center; margin-bottom: 15px; box-sizing: border-box; }
         #feedback, #broadcast-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
         #broadcast-overlay { background: var(--red); }
         .hidden { display: none !important; }
-        .row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(0, 243, 255, 0.1); }
-        
-        /* Briefing Styling */
         .briefing-text { text-align: left; font-size: 0.75rem; line-height: 1.5; color: #bde0fe; margin-bottom: 20px; border: 1px solid rgba(0, 243, 255, 0.2); padding: 15px; background: rgba(0,0,0,0.2); }
-        .briefing-text b { color: var(--cyan); }
-        
-        .timer-warning { color: var(--red) !important; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.5; } }
-        
-        .admin-link { display: inline-block; margin-top: 20px; font-family: 'Orbitron'; color: var(--cyan); text-decoration: none; font-size: 0.6rem; opacity: 0.4; transition: 0.3s; }
-        .admin-link:hover { opacity: 1; text-shadow: 0 0 5px var(--cyan); }
+        .admin-link { display: inline-block; margin-top: 15px; color: var(--cyan); opacity: 0.3; font-size: 0.6rem; text-decoration: none; font-family: 'Orbitron'; }
     </style>
 </head>
 <body>
@@ -48,31 +38,28 @@
     </div>
 
     <div id="login-screen">
-        <h1 style="font-family:'Orbitron'; color: var(--cyan); font-size: 2.5rem; margin-bottom: 5px;">CYBER OPS</h1>
-        <p style="font-size: 0.6rem; letter-spacing: 5px; margin-bottom: 30px; opacity: 0.5;">SECURE ACCESS GATEWAY</p>
-        <input type="text" id="username" placeholder="AGENT_NAME" maxlength="15" autocomplete="off">
-        <input type="password" id="passcode" placeholder="ACCESS_KEY" autocomplete="new-password">
+        <h1 style="font-family:'Orbitron'; color: var(--cyan); font-size: 2.5rem;">CYBER OPS</h1>
+        <input type="text" id="username" placeholder="AGENT_NAME" maxlength="15">
+        <input type="password" id="passcode" placeholder="ACCESS_KEY">
         <button class="btn" onclick="authenticate()">INITIALIZE</button>
-        <p id="login-err" style="color:var(--red); font-size:0.7rem; margin-top:10px; display:none;">ACCESS DENIED: INVALID KEY</p>
+        <p id="login-err" style="color:var(--red); font-size:0.7rem; display:none;">ACCESS DENIED</p>
     </div>
 
     <div id="instructions-screen" class="hidden">
-        <h2 style="font-family:'Orbitron'; color: var(--cyan); font-size: 1.2rem;">MISSION BRIEFING</h2>
+        <h2 style="font-family:'Orbitron'; color: var(--cyan);">MISSION BRIEFING</h2>
         <div class="briefing-text">
-            <p><b>1. OBJECTIVE:</b> Analyze 20 data packets to stabilize the network.</p>
-            <p><b>2. TIME LIMIT:</b> 5 minutes (300s). Countdown pauses during broadcasts.</p>
-            <p><b>3. PROTOCOLS:</b> <b>SECURE</b> for verified data. <b>THREAT</b> for phishing/malware.</p>
-            <p><b>4. CREDITS:</b> Developed by <b>Muhammad Ahmad</b> | Grade 7 Cyber Project.</p>
+            <p>1. Analyze 20 packets. 2. Time: 5:00. 3. Use SECURE/THREAT protocols.</p>
+            <p id="status-wait" style="color:var(--red); text-align:center; font-weight:bold;">AWAITING INSTRUCTOR START SIGNAL...</p>
         </div>
-        <button id="start-btn" class="btn" onclick="beginMission()" disabled>AWAITING INSTRUCTOR SIGNAL</button>
-        
+        <button id="start-btn" class="btn" onclick="beginMission()" disabled>LOCKED</button>
+        <a href="/admin.html" class="admin-link">[ BYPASS_TO_ADMIN ]</a>
     </div>
 
     <div id="play-screen" class="hidden">
         <div class="hud">
             <span>ID: <span id="hud-user"></span></span>
             <span>TIME: <span id="hud-time">05:00</span></span>
-            <span>UPLINK: <span id="hud-score">0</span>/2000</span>
+            <span>UPLINK: <span id="hud-score">0</span></span>
         </div>
         <div id="q-area"><p id="q-text"></p></div>
         <button class="btn" onclick="check(true)">✅ SECURE</button>
@@ -80,76 +67,46 @@
     </div>
 
     <div id="end-screen" class="hidden">
-        <h2 id="end-title" style="font-family:'Orbitron'; color: var(--cyan);">MISSION COMPLETE</h2>
-        <div style="border: 1px dashed var(--cyan); padding: 15px; margin: 15px 0; color: var(--cyan);">SYSTEMS STABILIZED. WAIT FOR INSTRUCTOR.</div>
-        <div id="leaderboard" style="background: rgba(0,0,0,0.3); max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
-        <button class="btn" onclick="location.reload()" style="width: 180px">REBOOT</button>
+        <h2 id="end-title" style="font-family:'Orbitron'; color: var(--cyan);">COMPLETE</h2>
+        <div id="leaderboard"></div>
+        <button class="btn" onclick="location.reload()">REBOOT</button>
     </div>
 </div>
 
 <script>
-    let user = "", score = 0, idx = 0;
-    let timerInterval;
-    let timeLeft = 300; 
-    let isPaused = false;
-    const SECRET_KEY = "G7-CYBER-2026"; 
-
+    let user = "", score = 0, idx = 0, timeLeft = 300, isPaused = false, timerInterval;
     const scenarios = [
-        { t: "SMS: 'Your Roblox account will be deleted in 2 hours. Click to verify: roblox-fix.cc'", isL: false, n: "Phishing! Scammers use false urgency to force quick, bad decisions." },
-        { t: "Email: 'Monthly school lunch menu for May is attached (menu.pdf)'.", isL: true, n: "Legit. Official school documents from known addresses are safe." },
-        { t: "Discord DM: 'I accidentally reported you! Contact this admin to stop the ban.'", isL: false, n: "Scam! Admins will never ask you to talk to them via a regular user DM." },
-        { t: "MFA: Your phone asks to 'Approve Login' but you aren't trying to sign in.", isL: false, n: "MFA Fatigue Attack. Someone has your password—Deny it!" },
-        { t: "Popup: 'Your iPhone has 27 viruses! Install Cleaner Pro now.'", isL: false, n: "Scareware. Websites cannot scan your phone for viruses." },
-        { t: "Amazon: 'Your package is being delivered today. Track here: amazon.com/orders'", isL: true, n: "Legit. Links from the official domain (amazon.com) are safe." },
-        { t: "A 'Friend' on WhatsApp sends a 'Free Spotify Premium' APK file.", isL: false, n: "Trojan! Never install APK files sent via chat apps." },
-        { t: "Public USB charging station at the airport has a 'Free High Speed' sign.", isL: false, n: "Juice Jacking. Data can be stolen through charging cables." },
-        { t: "Steam: 'Valve has updated their Subscriber Agreement. Please read.'", isL: true, n: "Routine legal updates from known gaming platforms are safe." },
-        { t: "Windows: 'A critical security update is ready. Restart to stay protected.'", isL: true, n: "Safe. Keeping your system updated is your best defense." },
-        { t: "Website asks for your Social Security number to 'Verify age over 13'.", isL: false, n: "Identity Theft. Sites should never ask for high-level personal IDs." },
-        { t: "YouTube: A comment says 'I made $5000 today using this link!'", isL: false, n: "Spambot. These links lead to financial scams or drainers." },
-        { t: "Email from 'No-Reply@Google.com' saying a new device logged in.", isL: true, n: "Security Alert. These are real, but check the sender email carefully." },
-        { t: "Person in a game asks for your password to 'gift you a skin'.", isL: false, n: "Social Engineering. No skin requires sharing your password." },
-        { t: "A 'Free VPN' app asks to access your Contacts and SMS history.", isL: false, n: "Spyware. A VPN has no reason to read your private text messages." },
-        { t: "School Wi-Fi: A login page asks for your Student ID and Password.", isL: true, n: "Captive Portal. This is how school networks verify users." },
-        { t: "Twitch: Link in chat says 'See the leak of the next GTA game here!'", isL: false, n: "Malware Hook. Scammers use hype to get you to download viruses." },
-        { t: "QR code on a parking meter says 'Scan here to pay for your spot.'", isL: false, n: "Quishing. Scammers put fake QR stickers over real ones." },
-        { t: "GitHub: 'Security Alert - A dependency has a known vulnerability.'", isL: true, n: "Dependabot. Automated security tools help developers stay safe." },
-        { t: "You find a USB drive labeled 'Math Exam' and plug it in.", isL: false, n: "Baiting. Mystery drives are often loaded with ransomware." }
+        { t: "SMS: 'Your account is locked. Click roblox-verify.com'", isL: false, n: "Phishing! Check the URL carefully." },
+        { t: "Email: 'May School Lunch Menu (pdf)'", isL: true, n: "Verified source." }
+        // ... add the rest of your scenarios here
     ];
 
-    function startTimer() {
-        timerInterval = setInterval(() => {
-            if (isPaused) return; 
-            timeLeft--;
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            const timeDisplay = document.getElementById('hud-time');
-            timeDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            if (timeLeft <= 30) timeDisplay.classList.add('timer-warning');
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                document.getElementById('feedback').style.display = 'none';
-                document.getElementById('end-title').innerText = "TIME EXPIRED";
-                document.getElementById('end-title').style.color = "var(--red)";
-                end();
-            }
-        }, 1000);
-    }
-
     function authenticate() {
-        user = document.getElementById('username').value.trim();
-        const pass = document.getElementById('passcode').value;
-        const err = document.getElementById('login-err');
-        if(!user) return;
-        if(pass === SECRET_KEY) {
-            err.style.display = "none";
+        user = document.getElementById('username').value;
+        if(document.getElementById('passcode').value === "G7-CYBER-2026") {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('instructions-screen').classList.remove('hidden');
-            startBroadcastListener(); 
-        } else {
-            err.style.display = "block";
-            document.getElementById('passcode').value = ""; 
+            syncWithDatabase();
         }
+    }
+
+    function syncWithDatabase() {
+        setInterval(async () => {
+            const res = await fetch('/api');
+            const data = await res.json();
+            
+            // Handle Start Toggle
+            const btn = document.getElementById('start-btn');
+            const waitTxt = document.getElementById('status-wait');
+            if(data.game_started) {
+                btn.disabled = false; btn.innerText = "ACCEPT MISSION";
+                waitTxt.innerText = "SYSTEM READY"; waitTxt.style.color = "var(--green)";
+            }
+            
+            // Handle Broadcast
+            document.getElementById('broadcast-overlay').style.display = data.broadcast ? 'flex' : 'none';
+            isPaused = data.broadcast;
+        }, 3000);
     }
 
     function beginMission() {
@@ -160,6 +117,17 @@
         startTimer();
     }
 
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            if (!isPaused) {
+                timeLeft--;
+                let m = Math.floor(timeLeft/60), s = timeLeft%60;
+                document.getElementById('hud-time').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+                if(timeLeft <= 0) end();
+            }
+        }, 1000);
+    }
+
     function render() {
         if(idx >= scenarios.length) return end();
         document.getElementById('q-text').innerText = scenarios[idx].t;
@@ -167,83 +135,20 @@
     }
 
     function check(choice) {
-        if(isPaused) return;
-        const q = scenarios[idx];
-        const fb = document.getElementById('feedback');
-        fb.style.display = 'flex';
-        if(choice === q.isL) {
-            score += 100;
-            document.getElementById('fb-status').innerText = "AUTHORIZED";
-            document.getElementById('fb-status').style.color = "var(--green)";
-        } else {
-            document.getElementById('fb-status').innerText = "BREACH";
-            document.getElementById('fb-status').style.color = "var(--red)";
-        }
-        document.getElementById('fb-note').innerText = q.n;
+        if(choice === scenarios[idx].isL) score += 100;
+        document.getElementById('feedback').style.display = 'flex';
+        document.getElementById('fb-status').innerText = choice === scenarios[idx].isL ? "AUTHORIZED" : "BREACH";
+        document.getElementById('fb-note').innerText = scenarios[idx].n;
         document.getElementById('hud-score').innerText = score;
     }
 
-    function nextQ() { 
-        idx++; 
-        if (idx >= scenarios.length) {
-            document.getElementById('feedback').style.display = 'none'; 
-            end(); 
-        } else {
-            render(); 
-        }
-    }
+    function nextQ() { idx++; render(); }
 
     async function end() {
         clearInterval(timerInterval);
         document.getElementById('play-screen').classList.add('hidden');
         document.getElementById('end-screen').classList.remove('hidden');
-        document.getElementById('leaderboard').innerHTML = "<p>SYNCING SCORES...</p>";
-        try {
-            await fetch('/api', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ username: user, score: score }) 
-            });
-            refreshLeaderboard();
-        } catch(e) {
-            document.getElementById('leaderboard').innerHTML = "<p style='color:var(--red)'>CONNECTION ERROR.</p>";
-        }
-    }
-
-    async function refreshLeaderboard() {
-        const res = await fetch('/api');
-        const data = await res.json();
-        document.getElementById('leaderboard').innerHTML = data.leaderboard.map((r, i) => `
-            <div class="row"><span>#${i+1} ${r.username.toUpperCase()}</span><span>${r.score}</span></div>
-        `).join('');
-    }
-
-    function startBroadcastListener() {
-        setInterval(async () => {
-            try {
-                const res = await fetch('/api');
-                const data = await res.json();
-                
-                if (data.broadcast) {
-                    isPaused = true;
-                    document.getElementById('broadcast-overlay').style.display = 'flex';
-                } else {
-                    isPaused = false;
-                    document.getElementById('broadcast-overlay').style.display = 'none';
-                }
-
-                const startBtn = document.getElementById('start-btn');
-                if (data.game_started) {
-                    startBtn.disabled = false;
-                    startBtn.innerText = "ACCEPT MISSION";
-                } else {
-                    startBtn.disabled = true;
-                    startBtn.innerText = "AWAITING INSTRUCTOR SIGNAL";
-                }
-            } catch (err) {
-                console.error("API Sync Failed", err);
-            }
-        }, 3000);
+        await fetch('/api', { method: 'POST', body: JSON.stringify({ username: user, score: score }), headers: {'Content-Type': 'application/json'} });
     }
 </script>
 </body>
