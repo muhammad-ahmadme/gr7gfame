@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LIVE NETWORK RANKINGS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@900&display=swap');
+        
+        :root {
+            --bg: #030509;
+            --cyan: #00f3ff;
+            --row-bg: rgba(10, 15, 26, 0.8);
+        }
+
+        body {
+            background: var(--bg);
+            background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: white;
+            font-family: 'Fira Code', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Orbitron';
+            font-size: 3.5rem;
+            color: var(--cyan);
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
+            margin-bottom: 5px;
+            letter-spacing: 5px;
+        }
+
+        .status-bar {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 40px;
+        }
+
+        #leaderboard-container {
+            width: 80%;
+            max-width: 900px;
+        }
+
+        .entry {
+            background: var(--row-bg);
+            border-left: 5px solid var(--cyan);
+            margin: 10px 0;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.8rem;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .rank { color: var(--cyan); width: 60px; font-family: 'Orbitron'; }
+        .name { flex-grow: 1; margin-left: 20px; text-transform: uppercase; }
+        .score { color: #39ff14; font-family: 'Orbitron'; }
+
+        /* Highlight the Top Agent */
+        .entry:nth-child(1) {
+            background: rgba(0, 243, 255, 0.15);
+            border-left: 10px solid #39ff14;
+            transform: scale(1.05);
+            margin-bottom: 25px;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>TOP_AGENTS_LIVE</h1>
+        <div class="status-bar">SYSTEM_STATUS: <span id="sync">SYNCING...</span> | REFRESH_RATE: 1000ms</div>
+    </div>
+
+    <div id="leaderboard-container">
+        </div>
+
+    <script>
+        async function fetchScores() {
+            try {
+                const res = await fetch('/api');
+                const data = await res.json();
+                
+                const container = document.getElementById('leaderboard-container');
+                const syncTag = document.getElementById('sync');
+                
+                // Clear and Re-render
+                container.innerHTML = data.leaderboard.map((player, index) => `
+                    <div class="entry">
+                        <span class="rank">#${index + 1}</span>
+                        <span class="name">${player.username}</span>
+                        <span class="score">${player.score.toLocaleString()} XP</span>
+                    </div>
+                `).join('');
+
+                syncTag.innerText = "STABLE";
+                syncTag.style.color = "#39ff14";
+            } catch (err) {
+                console.error("Link Dropped:", err);
+                document.getElementById('sync').innerText = "LINK_FAILURE";
+                document.getElementById('sync').style.color = "red";
+            }
+        }
+
+        // Run every 1000ms (1 second)
+        setInterval(fetchScores, 1000);
+        fetchScores(); // Initial load
+    </script>
+</body>
+</html>
