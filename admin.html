@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>COMMAND CENTER: ADMIN ACCESS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600;900&display=swap');
+        :root { --bg: #05080f; --panel: #0d121d; --cyan: #00f3ff; --green: #39ff14; --red: #ff003c; }
+        
+        body { background: var(--bg); color: #e0fbfc; font-family: 'Fira Code', monospace; padding: 40px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--cyan);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* Access Denied / Lock Screen */
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100;
+        }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--panel); padding: 20px; border: 1px solid #1f3a5f; border-radius: 10px; text-align: center; }
+
+        table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 10px; overflow: hidden; }
+        th { background: #1f3a5f; color: var(--cyan); padding: 15px; text-align: left; font-family: 'Orbitron'; font-size: 0.8rem; }
+        td { padding: 15px; border-bottom: 1px solid #1f3a5f; }
+        
+        .high-score { color: var(--green); font-weight: bold; }
+        input[type="password"] { 
+            padding: 15px; width: 250px; background: #000; border: 1px solid var(--cyan); 
+            color: var(--cyan); font-family: 'Fira Code'; text-align: center; margin-bottom: 20px;
+        }
+        .btn-admin { padding: 10px 20px; background: var(--cyan); border: none; cursor: pointer; font-family: 'Orbitron'; font-weight: bold; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="lock-screen">
+    <h1 style="font-family:'Orbitron'; color: var(--cyan);">RESTRICTED ACCESS</h1>
+    <p style="opacity:0.6">Enter Teacher Override Code</p>
+    <input type="password" id="admin-pass" placeholder="••••••••">
+    <button class="btn-admin" onclick="unlock()">AUTHENTICATE</button>
+    <p id="error-msg" style="color:var(--red); margin-top:20px;" class="hidden">INVALID ACCESS CODE</p>
+</div>
+
+<div id="dashboard" class="container hidden">
+    <header>
+        <div>
+            <h1 style="font-family:'Orbitron'; margin:0;">CYBER OPS ADMIN</h1>
+            <span style="font-size:0.7rem; color:var(--cyan); opacity:0.6;">COCKROACHDB UPLINK ACTIVE</span>
+        </div>
+        <button onclick="fetchData()" class="btn-admin">REFRESH DATA</button>
+    </header>
+
+    <div class="stats-grid" id="stats-summary"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>RANK</th>
+                <th>AGENT NAME</th>
+                <th>ACCURACY</th>
+                <th>STATUS</th>
+            </tr>
+        </thead>
+        <tbody id="admin-list"></tbody>
+    </table>
+</div>
+
+<script>
+    const TEACHER_PASS = "grade7pass"; // <--- CHANGE THIS PASS
+
+    function unlock() {
+        const input = document.getElementById('admin-pass').value;
+        if (input === TEACHER_PASS) {
+            document.getElementById('lock-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            fetchData();
+            setInterval(fetchData, 15000); // Auto-refresh every 15s
+        } else {
+            document.getElementById('error-msg').classList.remove('hidden');
+        }
+    }
+
+    async function fetchData() {
+        try {
+            const res = await fetch('/api');
+            const data = await res.json();
+            renderTable(data);
+            renderStats(data);
+        } catch (e) {
+            console.error("Fetch Error:", e);
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('admin-list');
+        tbody.innerHTML = data.map((r, i) => {
+            const percent = (r.score / 2000) * 100;
+            const status = percent >= 80 ? 'EXPERT' : percent >= 50 ? 'OPERATIVE' : 'RECRUIT';
+            return `
+                <tr>
+                    <td>#${i + 1}</td>
+                    <td style="font-weight:bold;">${r.username.toUpperCase()}</td>
+                    <td class="high-score">${r.score} <small>/ 2000</small></td>
+                    <td><span style="font-size:0.8rem; padding:4px 8px; background:#000; border:1px solid ${percent >= 80 ? 'var(--green)' : 'var(--cyan)'}">${status}</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function renderStats(data) {
+        const total = data.length;
+        const avg = data.length ? Math.round(data.reduce((acc, curr) => acc + curr.score, 0) / total) : 0;
+        const avgPercent = Math.round((avg / 2000) * 100);
+
+        document.getElementById('stats-summary').innerHTML = `
+            <div class="stat-card"><h3>${total}</h3><p>TOTAL AGENTS</p></div>
+            <div class="stat-card"><h3>${avgPercent}%</h3><p>CLASS ACCURACY</p></div>
+            <div class="stat-card"><h3 style="color:var(--green)">${data.length ? data[0].score : 0}</h3><p>HIGH SCORE</p></div>
+        `;
+    }
+</script>
+</body>
+</html>
