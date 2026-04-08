@@ -10,34 +10,35 @@
         
         #game-box { width: 500px; padding: 40px; background: var(--panel); border: 2px solid var(--cyan); border-radius: 20px; text-align: center; box-shadow: 0 0 30px rgba(0, 243, 255, 0.1); position: relative; transition: 0.3s; }
         .hud { display: flex; justify-content: space-between; margin-bottom: 20px; color: var(--cyan); font-family: 'Orbitron'; font-size: 0.8rem; }
-        #q-area { min-height: 160px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border-radius: 10px; margin: 20px 0; padding: 20px; font-size: 1.1rem; }
+        #q-area { min-height: 160px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border-radius: 10px; margin: 20px 0; padding: 20px; font-size: 1.1rem; border: 1px solid #1f3a5f; }
         
         .btn { width: 100%; padding: 15px; margin: 8px 0; border: 2px solid var(--green); background: transparent; color: var(--green); font-family: 'Orbitron'; cursor: pointer; transition: 0.2s; font-weight: 900; }
         .btn:hover { background: var(--green); color: #000; }
         .btn-threat { border-color: var(--red); color: var(--red); }
         .btn-threat:hover { background: var(--red); color: #000; }
         
-        input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--cyan); color: var(--cyan); text-align: center; margin-bottom: 20px; font-family: 'Fira Code'; box-sizing: border-box; }
+        input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--cyan); color: var(--cyan); text-align: center; margin-bottom: 20px; font-family: 'Fira Code'; box-sizing: border-box; outline: none; }
         
         #feedback { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 15, 0.98); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; border-radius: 18px; }
         .success-glow { border-color: var(--green) !important; box-shadow: 0 0 40px rgba(57, 255, 20, 0.3); }
         .fail-glow { border-color: var(--red) !important; box-shadow: 0 0 40px rgba(255, 0, 60, 0.3); }
         .hidden { display: none !important; }
-        .rank-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #1f3a5f; font-size: 0.9rem; }
+        .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #1f3a5f; font-size: 0.9rem; }
+        .rank-item:last-child { border: none; }
     </style>
 </head>
 <body>
 
 <div id="game-box">
     <div id="feedback">
-        <h1 id="fb-status" style="font-family:'Orbitron';"></h1>
-        <p id="fb-note" style="padding: 20px; line-height: 1.5;"></p>
-        <button class="btn" onclick="nextQ()" style="width: 180px">CONTINUE</button>
+        <h1 id="fb-status" style="font-family:'Orbitron'; font-size: 2.5rem;"></h1>
+        <p id="fb-note" style="padding: 20px; line-height: 1.6; font-size: 0.95rem;"></p>
+        <button class="btn" onclick="nextQ()" style="width: 200px">CONTINUE</button>
     </div>
 
     <div id="login-screen">
-        <h1 style="font-family:'Orbitron'; color: var(--cyan); letter-spacing: 4px;">CYBER OPS</h1>
-        <p style="opacity:0.5">GRADE 7 SECURITY SIMULATOR</p>
+        <h1 style="font-family:'Orbitron'; color: var(--cyan); letter-spacing: 4px; margin-bottom: 5px;">CYBER OPS</h1>
+        <p style="opacity:0.5; font-size: 0.7rem; margin-bottom: 30px;">SECURE ACCESS PROTOCOL V2.6</p>
         <input type="text" id="username" placeholder="ENTER AGENT NAME">
         <button class="btn" onclick="start()">INITIALIZE UPLINK</button>
     </div>
@@ -56,13 +57,17 @@
 
     <div id="end-screen" class="hidden">
         <h2 style="font-family:'Orbitron'; color: var(--cyan);">MISSION REPORT</h2>
-        <div id="leaderboard" style="margin: 20px 0;"></div>
+        <div id="leaderboard" style="margin: 20px 0; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px;">
+            <p style="opacity:0.5">Syncing with CockroachDB...</p>
+        </div>
         <button class="btn" onclick="location.reload()">RESTART SYSTEM</button>
     </div>
 </div>
 
 <script>
     let user = "", score = 0, idx = 0;
+    
+    // 20 DIVERSE SCENARIOS
     const scenarios = [
         { t: "SMS: 'Your Roblox account will be deleted in 2 hours. Click to verify: roblox-fix.cc'", isL: false, n: "Phishing! Scammers use urgency to make you click without thinking." },
         { t: "Email: 'Monthly school lunch menu for May is attached (menu.pdf)'.", isL: true, n: "Legit. Standard school PDF attachments are usually safe." },
@@ -129,19 +134,26 @@
         document.getElementById('end-screen').classList.remove('hidden');
         
         try {
-            await fetch('http://localhost:3000/save', {
+            // RELATIVE PATHS FOR VERCEL
+            await fetch('/api', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ username: user, score: score })
             });
 
-            const res = await fetch('http://localhost:3000/leaderboard');
+            const res = await fetch('/api');
             const data = await res.json();
-            document.getElementById('leaderboard').innerHTML = data.map(r => 
-                `<div class="rank-item"><span>${r.username}</span><span>${r.score}</span></div>`
-            ).join('');
+            
+            if(data.length > 0) {
+                document.getElementById('leaderboard').innerHTML = data.map(r => 
+                    `<div class="rank-item"><span>${r.username}</span><span>${r.score} PTS</span></div>`
+                ).join('');
+            } else {
+                document.getElementById('leaderboard').innerText = "No data found yet.";
+            }
         } catch(e) {
-            document.getElementById('leaderboard').innerText = "System Offline. Score saved locally.";
+            document.getElementById('leaderboard').innerText = "Sync Failed. Score saved to memory.";
+            console.error(e);
         }
     }
 </script>
