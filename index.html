@@ -20,6 +20,10 @@
         #broadcast-overlay { background: var(--red); }
         .hidden { display: none !important; }
         .row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(0, 243, 255, 0.1); }
+        
+        /* New timer warning animation */
+        .timer-warning { color: var(--red) !important; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
@@ -46,14 +50,18 @@
     </div>
 
     <div id="play-screen" class="hidden">
-        <div class="hud"><span>ID: <span id="hud-user"></span></span><span>UPLINK: <span id="hud-score">0</span>/2000</span></div>
+        <div class="hud">
+            <span>ID: <span id="hud-user"></span></span>
+            <span>TIME: <span id="hud-time">05:00</span></span>
+            <span>UPLINK: <span id="hud-score">0</span>/2000</span>
+        </div>
         <div id="q-area"><p id="q-text"></p></div>
         <button class="btn" onclick="check(true)">✅ SECURE</button>
         <button class="btn btn-threat" onclick="check(false)">☢️ THREAT</button>
     </div>
 
     <div id="end-screen" class="hidden">
-        <h2 style="font-family:'Orbitron'; color: var(--cyan);">MISSION COMPLETE</h2>
+        <h2 id="end-title" style="font-family:'Orbitron'; color: var(--cyan);">MISSION COMPLETE</h2>
         <div style="border: 1px dashed var(--cyan); padding: 15px; margin: 15px 0; color: var(--cyan);">SYSTEMS STABILIZED. WAIT FOR INSTRUCTOR.</div>
         <div id="leaderboard" style="background: rgba(0,0,0,0.3); max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
         <button class="btn" onclick="location.reload()" style="width: 180px">REBOOT</button>
@@ -62,7 +70,9 @@
 
 <script>
     let user = "", score = 0, idx = 0;
-    const SECRET_KEY = "G7-CYBER-2026"; // THE PASSWORD
+    let timerInterval;
+    let timeLeft = 300; // 300 seconds = 5 minutes
+    const SECRET_KEY = "G7-CYBER-2026"; 
 
     const scenarios = [
         { t: "SMS: 'Your Roblox account will be deleted in 2 hours. Click to verify: roblox-fix.cc'", isL: false, n: "Phishing! Scammers use false urgency to force quick, bad decisions." },
@@ -87,6 +97,29 @@
         { t: "You find a USB drive labeled 'Math Exam' and plug it in.", isL: false, n: "Baiting. Mystery drives are often loaded with ransomware." }
     ];
 
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            const timeDisplay = document.getElementById('hud-time');
+            
+            timeDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 30) {
+                timeDisplay.classList.add('timer-warning');
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('feedback').style.display = 'none';
+                document.getElementById('end-title').innerText = "TIME EXPIRED";
+                document.getElementById('end-title').style.color = "var(--red)";
+                end();
+            }
+        }, 1000);
+    }
+
     function start() {
         user = document.getElementById('username').value.trim();
         const pass = document.getElementById('passcode').value;
@@ -99,10 +132,11 @@
             document.getElementById('play-screen').classList.remove('hidden');
             document.getElementById('hud-user').innerText = user.toUpperCase();
             render();
+            startTimer(); // Initialize timer loop
             startBroadcastListener();
         } else {
             err.style.display = "block";
-            document.getElementById('passcode').value = ""; // Force clear
+            document.getElementById('passcode').value = ""; 
         }
     }
 
@@ -139,6 +173,7 @@
     }
 
     async function end() {
+        clearInterval(timerInterval); // Halt timer if mission completes early
         document.getElementById('play-screen').classList.add('hidden');
         document.getElementById('end-screen').classList.remove('hidden');
         document.getElementById('leaderboard').innerHTML = "<p>SYNCING SCORES...</p>";
